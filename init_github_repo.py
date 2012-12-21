@@ -39,6 +39,21 @@ def request_token(username, password, scope="", note=""):
     else:
         sys.exit("Cannot request token, username or password not specified")
 
+def repository_exists(username, repository_name):
+    """
+    Checks if the repository already exists.
+    """
+    request = urllib2.Request("https://api.github.com/repos/"+str(username)+"/"+str(repository_name))
 
-    
+    try:
+        if urllib2.urlopen(request).getcode() == 200:
+            return True
+        else:
+            return False
 
+    except urllib2.HTTPError as e:
+        result = json.loads("\n".join(e.readlines()))
+        if result['message'] == "Not Found":
+            return False
+        else:
+            sys.exit("Cannot determine if the repository exists.")
