@@ -93,7 +93,12 @@ def create_repository(token, repository_name, description="", auto_init=True, gi
                 return [1, response_data]
 
         except urllib2.HTTPError as e:
-            return [1, {"message": str(e)+": "+json.loads("\n".join(e.readlines()))['message']}]
+            if e.getcode() == 500:
+                response = {"message": "Repository created, but with "+str(e)+": "+json.loads("\n".join(e.readlines()))['message']}
+            else:
+                response = {"message": str(e)+": "+json.loads("\n".join(e.readlines()))['message']}
+                
+            return [1, response]
 
     else:
         return [1, {"message": "Authorization failed"}]
@@ -126,7 +131,7 @@ def main():
                 print "\n"
             else:
                 print "An error occured."
-                print result['message']
+                print result[1]['message']
         else:
             print "Cannot get valid token."
             print token[1]['message']
