@@ -4,12 +4,6 @@ import json
 import base64
 import sys
 
-user_setting = {"username": "",
-                "password": ""
-               }
-
-auth_settings = {"scopes":'["public_repo"]'}
-
 def request_token(username, password, scope="", note=""):
     """request a token from GitHub to access your repository
     scope variable can have following values:
@@ -25,7 +19,7 @@ def request_token(username, password, scope="", note=""):
         request.add_header("Authorization", "Basic %s" % base64string)
 
         try:
-            result = urllib2.urlopen(request, '{"note":'+str(note)+'", "scopes":'+str(scope)+'}')
+            result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+str(scope)+'}')
             
             # as the response comes in JSON format, we need to deserialize it to a Python object
             result = json.loads('\n'.join(result.readlines()))
@@ -34,6 +28,7 @@ def request_token(username, password, scope="", note=""):
                 return result['token']
         
         except urllib2.HTTPError as e:
+            print str(e)+": "+json.loads("\n".join(e.readlines()))['message']
             sys.exit()
 
     else:
@@ -57,3 +52,36 @@ def repository_exists(username, repository_name):
             return False
         else:
             sys.exit("Cannot determine if the repository exists.")
+
+def create_repository(token, repository_name, description="", auto_init=True, gitignore_template=""):
+    if token and repository_name:
+        create_options = '{"name": "'+str(repository_name)+'"'
+
+        if description:
+            create_options += ', "description": "'+str(description)+'"'
+
+        if auto_init == True:
+            create_options += ', "auto_init": true'
+            if gitignore_template:
+                create_options += ', "gitignore_template": "'+str(gitignore_template)+'"'
+
+        create_options += '}'
+
+        request = urllib2.Request("https://api.github.com/user/repos")
+        request.add_header("Authorization", "token %s" % token)
+
+        try:
+            response = urllib2.urlopen(request,create_options)
+            if response.getcode() == 201:
+                return 0
+            else:
+                return 1
+
+        except urllib2.HTTPError as e:
+            print str(e)+": "+json.loads("\n".join(e.readlines()))['message']
+            sys.exit()
+
+    else:
+        sys.exit("You must specify a valid token and repository name")
+
+
