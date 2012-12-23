@@ -18,8 +18,11 @@ def request_token(username, password, scope="", note=""):
         request = urllib2.Request("https://api.github.com/authorizations")
         request.add_header("Authorization", "Basic %s" % base64string)
 
+        if scope and type(scope) == list:
+            scope = json.dumps(scope)
+
         try:
-            result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+str(scope)+'}')
+            result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+scope+'}')
             
             # as the response comes in JSON format, we need to deserialize it to a Python object
             result = json.loads('\n'.join(result.readlines()))
