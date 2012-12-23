@@ -6,13 +6,23 @@ import sys
 import argparse
 from getpass import getpass
 
-def request_token(username, password, scope="", note=""):
+def request_token(username, password, scopes=[""], note=""):
     """request a token from GitHub to access your repository
     scope variable can have following values:
     public, public_repo, repo, repo:status, delete_repo, notifications, gist
     see http://developer.github.com/v3/oauth/#scopes for explanations"""
-    
-    if username and password:
+
+    valid_scopes = ["", "public_repo", "repo", "user", "repo:status", "delete_repo", "notifications", "gist"]
+
+    # Check if the scope is in the list of valid scopes
+    for scope in scopes:
+        if not scope in valid_scopes:
+            error = 1
+            break
+        else:
+            error = 0
+
+    if username and password and error == 0:
         # GitHub expects username:password to be base64 encoded
         base64string = base64.encodestring(str(username)+":"+str(password)).replace('\n','')
 
@@ -24,20 +34,19 @@ def request_token(username, password, scope="", note=""):
             scope = json.dumps(scope)
 
         try:
-            result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+scope+'}')
+            result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+scopes+'}')
             
             # as the response comes in JSON format, we need to deserialize it to a Python object
             result = json.loads('\n'.join(result.readlines()))
             
             if result['token'] and type(result) == dict:
-                return result['token']
+                return [0, result['token']]
         
         except urllib2.HTTPError as e:
-            print str(e)+": "+json.loads("\n".join(e.readlines()))['message']
-            sys.exit()
+            return [1, {"message": str(e)+": "+json.loads("\n".join(e.readlines()))['message']}]
 
     else:
-        sys.exit("Cannot request token, username or password not specified")
+        return [1, {"message": "Wrong scopes or username/password not specified"}]
 
 def repository_exists(username, repository_name):
     """
@@ -56,7 +65,7 @@ def repository_exists(username, repository_name):
         if result['message'] == "Not Found":
             return False
         else:
-            sys.exit("Cannot determine if the repository exists.")
+            return True
 
 def create_repository(token, repository_name, description="", auto_init=True, gitignore_template=""):
     if token and repository_name:
@@ -103,19 +112,24 @@ def main():
         args.password = getpass("Password: ")
 
     if repository_exists(args.username, args.repo_name) == False:
-        print "Creating repository..."
-        token = request_token(args.username, args.password, ['repo'])
-        result = create_repository(token, args.repo_name, args.desc, args.a, args.lang)
-        if result[0] == 0:
-            print "Repository created successfully."
-            print "Repository: %s" % result[1]['name']
-            print "Description: %s" % result[1]['description']
-            print "URL: %s" % result[1]['html_url']
-            print "Clone URL: %s" % result[1]['clone_url']
-            print "\n"
+        print "Requesting token..."
+        token = request_token(args.username, args.password, ['repost'])
+        if token[0] == 0:
+            print "Creating repository..."
+            result = create_repository(token[1], args.repo_name, args.desc, args.a, args.lang)
+            if result[0] == 0:
+                print "Repository created successfully.\n"
+                print "Name: %s" % result[1]['name']
+                print "Description: %s" % result[1]['description']
+                print "URL: %s" % result[1]['html_url']
+                print "Clone URL: %s" % result[1]['clone_url']
+                print "\n"
+            else:
+                print "An error occured."
+                print result['message']
         else:
-            print "An error occured."
-            print result['message']
+            print "Cannot get valid token."
+            print token[1]['message']
  
 
     else:
