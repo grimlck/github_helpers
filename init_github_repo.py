@@ -3,6 +3,8 @@ import urllib2
 import json
 import base64
 import sys
+import argparse
+from getpass import getpass
 
 def request_token(username, password, scope="", note=""):
     """request a token from GitHub to access your repository
@@ -75,16 +77,52 @@ def create_repository(token, repository_name, description="", auto_init=True, gi
 
         try:
             response = urllib2.urlopen(request,create_options)
+            response_data=json.loads('\n'.join(response.readlines()))
             if response.getcode() == 201:
-                return 0
+                return [0, response_data]
             else:
-                return 1
+                return [1, response_data]
 
         except urllib2.HTTPError as e:
-            print str(e)+": "+json.loads("\n".join(e.readlines()))['message']
-            sys.exit()
+            return [1, {"message": str(e)+": "+json.loads("\n".join(e.readlines()))['message']}]
 
     else:
-        sys.exit("You must specify a valid token and repository name")
+        return [1, {"message": "Authorization failed"}]
+
+def main():
+    ap = argparse.ArgumentParser(description="Inititalize a Github repository")
+    ap.add_argument('-u', dest='username', metavar='Username', type=str, required=True, help='GitHub account name')
+    ap.add_argument('-p', dest='password', metavar='Password', type=str, required=False, help='GitHub account password')
+    ap.add_argument('-n', dest='repo_name', metavar='Repository name', type=str, required=True, help='Name of the new GitHub repository')
+    ap.add_argument('-d', dest='desc', metavar='Description', type=str, required=False, help='Description for the new repository')
+    ap.add_argument('-a', action='store_true', help='Initialize repository with empty README.md')
+    ap.add_argument('-g', dest='lang', metavar='Language or Platform', type=str, required=False, help='Initialize repository with .gitignore for the specified language (e.g.: Python)')
+    args = ap.parse_args()
+
+    if not args.password:
+        args.password = getpass("Password: ")
+
+    if repository_exists(args.username, args.repo_name) == False:
+        print "Creating repository..."
+        token = request_token(args.username, args.password, ['repo'])
+        result = create_repository(token, args.repo_name, args.desc, args.a, args.lang)
+        if result[0] == 0:
+            print "Repository created successfully."
+            print "Repository: %s" % result[1]['name']
+            print "Description: %s" % result[1]['description']
+            print "URL: %s" % result[1]['html_url']
+            print "Clone URL: %s" % result[1]['clone_url']
+            print "\n"
+        else:
+            print "An error occured."
+            print result['message']
+ 
+
+    else:
+        print "Repository %s/%s already exists." % (args.username, args.repo_name)
+        print "URL: https://github.com/%s/%s" % (args.username, args.repo_name)
+
+if __name__ == "__main__":
+    main()
 
 
