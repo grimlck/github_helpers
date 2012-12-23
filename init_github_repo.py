@@ -30,8 +30,8 @@ def request_token(username, password, scopes=[""], note=""):
         request = urllib2.Request("https://api.github.com/authorizations")
         request.add_header("Authorization", "Basic %s" % base64string)
 
-        if scope and type(scope) == list:
-            scope = json.dumps(scope)
+        if scopes and type(scopes) == list:
+            scopes = json.dumps(scope)
 
         try:
             result = urllib2.urlopen(request, '{"note": "'+str(note)+'", "scopes": '+scopes+'}')
@@ -113,7 +113,7 @@ def main():
 
     if repository_exists(args.username, args.repo_name) == False:
         print "Requesting token..."
-        token = request_token(args.username, args.password, ['repost'])
+        token = request_token(args.username, args.password, ['repo'])
         if token[0] == 0:
             print "Creating repository..."
             result = create_repository(token[1], args.repo_name, args.desc, args.a, args.lang)
@@ -138,5 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
