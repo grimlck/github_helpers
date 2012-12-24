@@ -13,7 +13,7 @@ def get_repositories(github_user):
     http://developer.github.com/v3/repos/"""
     
     if not github_user:
-        return [1, "GitHub username missing"]
+        return [1, {"message": "GitHub username missing"}]
     else:
         request = urllib2.Request("https://api.github.com/users/"+str(github_user)+"/repos")
         request.get_method = lambda: 'GET'
@@ -27,7 +27,7 @@ def get_repositories(github_user):
             return [1, str(e)+": "+json.loads('\n',join(e.readlines))]
 
 def main():
-    repositories = get_repositories("grimlck")
+    repositories = get_repositories("")
     if repositories[0] == 0:
         for repository in repositories[1]:
             print "Repository: %s" % repository['name']
