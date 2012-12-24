@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-import base64
 import urllib2
 import json
 import sys
+import argparse
 
 def get_repositories(github_user):
     """get the GitHub repositories for the given GitHub account.
@@ -27,7 +27,12 @@ def get_repositories(github_user):
             return [1, str(e)+": "+json.loads('\n',join(e.readlines))]
 
 def main():
-    repositories = get_repositories("")
+    ap = argparse.ArgumentParser(description="List GitHub repositories by user")
+    ap.add_argument("username", type=str, help="GitHub username")
+    args = ap.parse_args()
+
+    repositories = get_repositories(args.username)
+
     if repositories[0] == 0:
         for repository in repositories[1]:
             print "Repository: %s" % repository['name']
@@ -40,6 +45,7 @@ def main():
             print "\n"
     else:
         print repositories[1]['message']
+        
 
 
 if __name__ == "__main__":
