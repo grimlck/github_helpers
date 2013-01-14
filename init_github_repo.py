@@ -161,34 +161,38 @@ def main():
                     .gitignore for the specified language (e.g.: Python)''')
     args = ap.parse_args()
 
-    if not args.password or args.password == None:
-        args.password = getpass("Password: ")
 
-    if repository_exists(args.username, args.repo_name) is False:
-        print "Requesting token..."
-        token = request_token(args.username, args.password, ['repo'])
-        if token[0] == 0:
-            print "Creating repository..."
-            result = create_repository(token[1], args.repo_name,
-                                       args.desc, args.a, args.lang)
-            if result[0] == 0:
-                print "Repository created successfully.\n"
-                print "Name: %s" % result[1]['name']
-                print "Description: %s" % result[1]['description']
-                print "URL: %s" % result[1]['html_url']
-                print "Clone URL: %s" % result[1]['clone_url']
-                print "\n"
+    try:
+        if not args.password or args.password == None:
+            args.password = getpass("Password: ")
+
+        if repository_exists(args.username, args.repo_name) is False:
+            print "Requesting token..."
+            token = request_token(args.username, args.password, ['repo'])
+            if token[0] == 0:
+                print "Creating repository..."
+                result = create_repository(token[1], args.repo_name,
+                                           args.desc, args.a, args.lang)
+                if result[0] == 0:
+                    print "Repository created successfully.\n"
+                    print "Name: %s" % result[1]['name']
+                    print "Description: %s" % result[1]['description']
+                    print "URL: %s" % result[1]['html_url']
+                    print "Clone URL: %s" % result[1]['clone_url']
+                    print "\n"
+                else:
+                    print "An error occured."
+                    print result[1]['message']
             else:
-                print "An error occured."
-                print result[1]['message']
-        else:
-            print "Cannot get valid token."
-            print token[1]['message']
+                print "Cannot get valid token."
+                print token[1]['message']
 
-    else:
-        print "Repository %s/%s already exists." % (args.username,
-                                                    args.repo_name)
-        print "URL: https://github.com/%s/%s" % (args.username, args.repo_name)
+        else:
+            print "Repository %s/%s already exists." % (args.username,
+                                                        args.repo_name)
+            print "URL: https://github.com/%s/%s" % (args.username, args.repo_name)
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()
