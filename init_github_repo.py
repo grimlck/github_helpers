@@ -140,6 +140,8 @@ def main():
                     required=True,
                     help='GitHub account name')
     ap.add_argument('-p',
+                    nargs="?",
+                    const=None,
                     dest='password',
                     metavar='Password',
                     type=str,
@@ -159,7 +161,7 @@ def main():
                     .gitignore for the specified language (e.g.: Python)''')
     args = ap.parse_args()
 
-    if not args.password:
+    if not args.password or args.password == None:
         args.password = getpass("Password: ")
 
     if repository_exists(args.username, args.repo_name) is False:
